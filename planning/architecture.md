@@ -259,9 +259,9 @@ You:
 
 | Diagram | File | Description |
 |---------|------|-------------|
-| **State Diagram** | `docs/state_diagram.png` | Full session lifecycle — Idle → Input → LLM → Tool loop → Complete |
-| **Sequence Diagram 1** | `docs/sequence_diagram_1.png` | Documentation query — RAG server invoked end-to-end |
-| **Sequence Diagram 2** | `docs/sequence_diagram_2.png` | File read + web search + file edit with confirmation |
+| **State Diagram** | `planning/state_diagram.png` | Full session lifecycle — Idle → Input → LLM → Tool loop → Complete |
+| **Sequence Diagram 1** | `planning/sequence_diagram_1.png` | Documentation query — RAG server invoked end-to-end |
+| **Sequence Diagram 2** | `planning/sequence_diagram_2.png` | File read + web search + file edit with confirmation |
 
 
 
