@@ -303,7 +303,7 @@ You:
 
 **Architecture Diagram**
 
-![Nexcode Architecture Diagram](./architecture-diagram.png)
+![Nexcode Architecture Diagram](./state-diagram.png)
 
 **Sequence Diagram**
 
