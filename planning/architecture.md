@@ -69,16 +69,6 @@ Built with the **Rich** library.
 - `--auto` flag toggles between confirmation and auto-execute mode
 - Conversation history preserved across turns
 
-**Confirmation mode:**
-```
-[Tool] write_file(path="utils.py", ...) → Confirm? [y/n]:
-```
-
-**Auto-execute mode:**
-```
-[Tool] write_file(path="utils.py", ...) → executing...
-```
-
 ---
 
 ### 2. Agentic Loop — `agent/loop.py`
