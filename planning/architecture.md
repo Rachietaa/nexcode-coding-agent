@@ -139,7 +139,7 @@ Four LLM providers behind one unified interface.
 
 | Provider      | Type  | Model                     | Notes                     |
 | ------------- | ----- | ------------------------- | ------------------------- |
-| **Groq**      | Cloud | `llama-3.3-70b-versatile` | Fast inference, free tier |
+| **Groq**      | Cloud | `openai/gpt-oss-120b` | Fast inference, free tier |
 | **Anthropic** | Cloud | `claude-sonnet-4-6`       | Highest quality           |
 | **OpenAI**    | Cloud | `gpt-4o`                  | Broad ecosystem           |
 | **Ollama**    | Local | `llama3.2`, `codellama`   | Offline, no API key       |
