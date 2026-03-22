@@ -33,9 +33,6 @@ nexcode/
 │   ├── ingest.py
 │   ├── retriever.py
 │   └── server.py
-├── tools/
-│   ├── __init__.py
-│   └── executor.py
 ├── planning/
 │   └── architecture.md
 ├── .env
