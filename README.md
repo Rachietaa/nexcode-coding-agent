@@ -260,13 +260,3 @@ Add `.txt` or `.md` files to `docs_source/` and run:
 ```bash
 python rag_server/ingest.py
 ```
-
-## Demo Ideas
-
-```text
-Read main.py and summarize what it does
-```
-
-```text
-Search the web for LangChain ReAct agent best practices and also query the local docs, then write everything into research.md
-```
