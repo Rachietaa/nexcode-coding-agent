@@ -52,7 +52,7 @@ MCP Client
  ├──► Tavily MCP Server       (web search)
  └──► Custom RAG MCP Server   (vector DB query over library docs)
 ```
-Example file structure:
+File structure:
 ```
 nexcode-coding-agent/
 │
