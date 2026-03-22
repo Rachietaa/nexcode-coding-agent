@@ -58,7 +58,7 @@ nexcode-coding-agent/
 │
 ├── main.py                        ← CLI REPL entry point 
 ├── README.md                      ← setup and usage instructions
-├── PLANNING.md                    
+├── PLANNING.md                    ← project planning and architecture blueprint
 ├── requirements.txt               ← all Python dependencies
 ├── .env                           ← API keys 
 ├── .gitignore
