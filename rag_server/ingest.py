@@ -1,67 +1,89 @@
-"""
-ONE-TIME script to build the vector database from docs_source/ files.
-Run: python rag_server/ingest.py
-After this runs once, never need to run again unless you add new docs.
-"""
-
+import os
+import shutil
+from langchain_core.documents import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
 import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
-from config.settings import CHROMA_DB_PATH, DOCS_SOURCE_PATH, EMBEDDING_MODEL
-from rich.console import Console
-
-console = Console()
+from config.settings import CHROMA_DB_PATH, EMBEDDING_MODEL
 
 
-def ingest_docs():
-    console.print("[bold cyan]NexCode — Building Vector Database...[/bold cyan]")
+DOCS_DIR = "docs_source"
+COLLECTION_NAME = "nexcode_docs"
 
-    if not os.path.exists(DOCS_SOURCE_PATH):
-        console.print("[red]docs_source/ folder not found.[/red]")
-        return
 
-    loader = DirectoryLoader(
-        DOCS_SOURCE_PATH,
-        glob="**/*",
-        loader_cls=TextLoader,
-        loader_kwargs={"encoding": "utf-8"},
-        silent_errors=True,
-    )
-    documents = loader.load()
+def load_documents() -> list[Document]:
+    documents = []
 
-    if not documents:
-        console.print("[red]No documents found in docs_source/. Add .md or .txt files first.[/red]")
-        return
+    for root, _, files in os.walk(DOCS_DIR):
+        for filename in files:
+            filepath = os.path.join(root, filename)
 
-    console.print(f"[green]✓ Loaded {len(documents)} documents[/green]")
+            if not filename.lower().endswith((".txt", ".md", ".py", ".json")):
+                continue
 
+            with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+                text = f.read().strip()
+
+            if not text:
+                continue
+
+            documents.append(
+                Document(
+                    page_content=text,
+                    metadata={
+                        "source": filepath.replace("\\", "/"),
+                        "filename": filename,
+                    },
+                )
+            )
+
+    return documents
+
+
+def split_documents(documents: list[Document]) -> list[Document]:
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=512,
-        chunk_overlap=64,
-        separators=["\n## ", "\n### ", "\n\n", "\n", " "],
+        chunk_size=1200,
+        chunk_overlap=200,
+        add_start_index=True,
     )
-    chunks = splitter.split_documents(documents)
-    console.print(f"[green]✓ Split into {len(chunks)} chunks[/green]")
 
-    console.print("[cyan]Loading embedding model (first time downloads ~90MB)...[/cyan]")
+    chunks = splitter.split_documents(documents)
+
+    for i, chunk in enumerate(chunks, start=1):
+        chunk.metadata["chunk_id"] = i
+
+    return chunks
+
+
+def build_vectorstore(chunks: list[Document]):
     embeddings = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL)
 
-    console.print(f"[cyan]Storing in ChromaDB at {CHROMA_DB_PATH}...[/cyan]")
+    if os.path.exists(CHROMA_DB_PATH):
+        shutil.rmtree(CHROMA_DB_PATH)
+
     Chroma.from_documents(
         documents=chunks,
         embedding=embeddings,
         persist_directory=CHROMA_DB_PATH,
-        collection_name="nexcode_docs",
+        collection_name=COLLECTION_NAME,
     )
-
-    console.print(f"[bold green]✓ Done! Vector DB ready at {CHROMA_DB_PATH}[/bold green]")
 
 
 if __name__ == "__main__":
-    ingest_docs()
+    print("Loading documents...")
+    docs = load_documents()
+    print(f"Loaded {len(docs)} documents")
+
+    print("Splitting documents...")
+    chunks = split_documents(docs)
+    print(f"Created {len(chunks)} chunks")
+
+    print("Building Chroma vector store...")
+    build_vectorstore(chunks)
+
+    print("Done. Vector DB built successfully.")
