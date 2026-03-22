@@ -32,7 +32,7 @@ and keeps going without constant user input.
 
 ## System Architecture
 
-Five core components, each with a single responsibility:
+Five core components:
 ```
 User
  │
