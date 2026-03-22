@@ -1,11 +1,12 @@
 # NexCode — Project Planning Document
 
-> Blueprint for NexCode, an autonomous CLI coding assistant built on a 
+> Blueprint for NexCode, an autonomous CLI coding assistant built on a
 > ReAct agentic loop with MCP tool integration and HyDE-powered RAG retrieval.
 
 ---
 
 ## Table of Contents
+
 - [Project Goal](#project-goal)
 - [System Architecture](#system-architecture)
 - [Components](#components)
@@ -21,11 +22,11 @@
 
 ## Project Goal
 
-**NexCode** is an autonomous command-line coding assistant. Given a natural 
-language task, it reasons about a local codebase, selects tools, executes 
+**NexCode** is an autonomous command-line coding assistant. Given a natural
+language task, it reasons about a local codebase, selects tools, executes
 them, observes the results, and loops until the job is done.
 
-This is not a chatbot. The agent decides what to do, acts on the file system, 
+This is not a chatbot. The agent decides what to do, acts on the file system,
 and keeps going without constant user input.
 
 ---
@@ -33,6 +34,7 @@ and keeps going without constant user input.
 ## System Architecture
 
 Five core components:
+
 ```
 User
  │
@@ -52,15 +54,17 @@ MCP Client
  ├──► Tavily MCP Server       (web search)
  └──► Custom RAG MCP Server   (vector DB query over library docs)
 ```
+
 File structure:
+
 ```
 nexcode-coding-agent/
 │
-├── main.py                        ← CLI REPL entry point 
+├── main.py                        ← CLI REPL entry point
 ├── README.md                      ← setup and usage instructions
 ├── PLANNING.md                    ← project planning and architecture blueprint
 ├── requirements.txt               ← all Python dependencies
-├── .env                           ← API keys 
+├── .env                           ← API keys
 ├── .gitignore
 │
 ├── planning/
@@ -100,7 +104,7 @@ nexcode-coding-agent/
 
 ## Components
 
-### 1. CLI REPL 
+### 1. CLI REPL
 
 Built with the **Rich** library.
 
@@ -114,7 +118,7 @@ Built with the **Rich** library.
 
 ---
 
-### 2. Agentic Loop 
+### 2. Agentic Loop
 
 Built with **LangGraph ReAct**.
 
@@ -123,24 +127,25 @@ Built with **LangGraph ReAct**.
 - Tool results appended to context after each execution
 - Loop terminates only when the LLM decides no more tools are needed
 
-**Why LangGraph:** Handles the reason-act-observe cycle natively, supports 
-tool calling across all LangChain providers, graph-based state is easy to 
+**Why LangGraph:** Handles the reason-act-observe cycle natively, supports
+tool calling across all LangChain providers, graph-based state is easy to
 debug.
 
 ---
 
-### 3. Provider Abstraction 
+### 3. Provider Abstraction
 
 Four LLM providers behind one unified interface.
 
-| Provider | Type | Model | Notes |
-|----------|------|-------|-------|
-| **Groq** | Cloud | `llama-3.3-70b-versatile` | Fast inference, free tier |
-| **Anthropic** | Cloud | `claude-sonnet-4-6` | Highest quality |
-| **OpenAI** | Cloud | `gpt-4o` | Broad ecosystem |
-| **Ollama** | Local | `llama3.2`, `codellama` | Offline, no API key |
+| Provider      | Type  | Model                     | Notes                     |
+| ------------- | ----- | ------------------------- | ------------------------- |
+| **Groq**      | Cloud | `llama-3.3-70b-versatile` | Fast inference, free tier |
+| **Anthropic** | Cloud | `claude-sonnet-4-6`       | Highest quality           |
+| **OpenAI**    | Cloud | `gpt-4o`                  | Broad ecosystem           |
+| **Ollama**    | Local | `llama3.2`, `codellama`   | Offline, no API key       |
 
 Switch with an environment variable — no code changes needed:
+
 ```bash
 PROVIDER=groq nexcode
 PROVIDER=anthropic nexcode
@@ -149,7 +154,7 @@ PROVIDER=ollama MODEL=codellama nexcode
 
 ---
 
-### 4. MCP Client 
+### 4. MCP Client
 
 Uses **LangChain's MultiServerMCPClient**.
 
@@ -168,7 +173,7 @@ Uses **LangChain's MultiServerMCPClient**.
 
 Tools: `read_file`, `write_file`, `list_directory`, `create_directory`
 
-Scoped to the project root directory to prevent accidental system file 
+Scoped to the project root directory to prevent accidental system file
 modification.
 
 ---
@@ -179,17 +184,18 @@ modification.
 
 Tools: `web_search`, `web_fetch`
 
-Called when the agent needs information not in the local codebase — 
+Called when the agent needs information not in the local codebase —
 library docs, API references, current best practices.
 
 ---
 
 ### Server 3 — Custom RAG Server
 
-A locally-running FastMCP server for querying a vector database of library 
+A locally-running FastMCP server for querying a vector database of library
 documentation.
 
 Tool exposed:
+
 ```python
 @mcp.tool()
 def rag_query(query: str) -> str:
@@ -201,6 +207,7 @@ def rag_query(query: str) -> str:
 ## RAG Server
 
 ### Ingestion Pipeline (one-time setup)
+
 ```
 Step 1 — Load documents
          └─► .md and .txt files from /docs folder
@@ -224,11 +231,12 @@ Run once. All future sessions query the existing database — no re-embedding.
 **Hypothetical Document Embeddings (HyDE)** is the retrieval technique.
 
 **The problem:**  
-A query like *"how do I use LCEL with streaming?"* uses different vocabulary 
-than the documentation that answers it. Embedding the raw query misses the 
+A query like _"how do I use LCEL with streaming?"_ uses different vocabulary
+than the documentation that answers it. Embedding the raw query misses the
 best chunks.
 
 **The solution:**
+
 ```
 Standard RAG:
   query → embed query → search → chunks → answer
@@ -242,6 +250,7 @@ HyDE:
 ```
 
 **Why HyDE:**
+
 - Fixes vocabulary mismatch in technical doc queries
 - Reuses the same LLM already in the agent — no extra infrastructure
 - Better retrieval than raw query embedding for code questions
@@ -252,6 +261,7 @@ HyDE:
 ## CLI Interface
 
 Target terminal experience:
+
 ```
 $ nexcode
 ╔══════════════════════════════════════════════════╗
@@ -276,31 +286,35 @@ You:
 
 ## Implementation Order
 
-| Phase | What gets built | Why this order |
-|-------|----------------|----------------|
-| **1** | Project structure, `requirements.txt`, README | Foundation first |
-| **2** | Provider abstraction layer | Everything else depends on this |
-| **3** | Basic agentic loop (no tools yet) | Verify LLM works before adding tools |
-| **4** | MCP client + filesystem server | First real tool capability |
-| **5** | Tavily external server | Second MCP server |
-| **6** | RAG ingestion pipeline + ChromaDB | Build the DB before the server |
-| **7** | Custom RAG MCP server + HyDE | Third MCP server |
-| **8** | CLI REPL — Rich, streaming, confirmation mode | Polish the interface |
+| Phase | What gets built                               | Why this order                       |
+| ----- | --------------------------------------------- | ------------------------------------ |
+| **1** | Project structure, `requirements.txt`, README | Foundation first                     |
+| **2** | Provider abstraction layer                    | Everything else depends on this      |
+| **3** | Basic agentic loop (no tools yet)             | Verify LLM works before adding tools |
+| **4** | MCP client + filesystem server                | First real tool capability           |
+| **5** | Tavily external server                        | Second MCP server                    |
+| **6** | RAG ingestion pipeline + ChromaDB             | Build the DB before the server       |
+| **7** | Custom RAG MCP server + HyDE                  | Third MCP server                     |
+| **8** | CLI REPL — Rich, streaming, confirmation mode | Polish the interface                 |
+
 ---
 
 ## Diagrams
 
-| Diagram | File | Description |
-|---------|------|-------------|
-| **State Diagram** | `planning/state_diagram.png` | Full session lifecycle — Idle → Input → LLM → Tool loop → Complete |
-| **Sequence Diagram 1** | `planning/sequence_diagram_1.png` | Documentation query — RAG server invoked end-to-end |
-| **Sequence Diagram 2** | `planning/sequence_diagram_2.png` | File read + web search + file edit with confirmation |
+**Architecture Diagram**
+
+![Nexcode Architecture Diagram](./architecture-diagram.png)
+
+**Sequence Diagram**
+
+![Nexcode Sequence Diagram](./sequence-diagram.png)
 
 ---
 
 ## Dependencies
 
 **Python — `requirements.txt`**
+
 ```
 langchain
 langgraph
@@ -317,15 +331,17 @@ tavily-python
 ```
 
 **Node**
+
 ```
 @modelcontextprotocol/server-filesystem
 tavily-mcp
 ```
 
 **Environment variables**
+
 ```bash
 GROQ_API_KEY=...
 ANTHROPIC_API_KEY=...
-OPENAI_API_KEY=...      
+OPENAI_API_KEY=...
 TAVILY_API_KEY=...
 ```
