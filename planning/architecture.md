@@ -57,7 +57,7 @@ MCP Client
 
 ## Components
 
-### 1. CLI REPL — `main.py`
+### 1. CLI REPL 
 
 Built with the **Rich** library.
 
@@ -71,7 +71,7 @@ Built with the **Rich** library.
 
 ---
 
-### 2. Agentic Loop — `agent/loop.py`
+### 2. Agentic Loop 
 
 Built with **LangGraph ReAct**.
 
@@ -86,7 +86,7 @@ debug.
 
 ---
 
-### 3. Provider Abstraction — `agent/providers.py`
+### 3. Provider Abstraction 
 
 Four LLM providers behind one unified interface.
 
@@ -106,7 +106,7 @@ PROVIDER=ollama MODEL=codellama nexcode
 
 ---
 
-### 4. MCP Client — `mcp_client/client.py`
+### 4. MCP Client 
 
 Uses **LangChain's MultiServerMCPClient**.
 
