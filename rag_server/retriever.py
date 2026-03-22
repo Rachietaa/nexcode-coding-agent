@@ -100,3 +100,4 @@ def format_citation_context(results: list[dict]) -> str:
         content = item.get("content", "").strip()
         blocks.append(f"[Source: {filename} | Chunk: {chunk_id}]\n{content}")
     return "\n\n".join(blocks)
+
