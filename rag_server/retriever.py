@@ -7,6 +7,7 @@ HyDE technique:
   This bridges the semantic gap between short queries and long documentation chunks,
   dramatically improving retrieval accuracy for technical/code queries.
 """
+
 from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_groq import ChatGroq
@@ -100,4 +101,3 @@ def format_citation_context(results: list[dict]) -> str:
         content = item.get("content", "").strip()
         blocks.append(f"[Source: {filename} | Chunk: {chunk_id}]\n{content}")
     return "\n\n".join(blocks)
-
