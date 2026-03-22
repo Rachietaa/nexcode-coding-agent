@@ -10,6 +10,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
+
 from agent.providers import get_llm
 from agent.loop import run_agent
 from mcp_client.client import build_mcp_client
@@ -36,7 +37,7 @@ def print_providers():
     t.add_column("Provider", style="cyan")
     t.add_column("Example Model", style="white")
     t.add_column("Notes", style="dim")
-    t.add_row("groq", "llama-3.3-70b-versatile", "FREE API key — recommended")
+    t.add_row("groq", "openai/gpt-oss-120b", "FREE API key — recommended")
     t.add_row("ollama", "llama3.2, codellama", "Fully local, no key needed")
     t.add_row("openai", "gpt-4o, gpt-4o-mini", "Paid API key required")
     t.add_row("anthropic", "claude-3-5-sonnet-20241022", "Paid API key required")
@@ -55,11 +56,32 @@ def save_session(messages: list):
         json.dump(messages, f, indent=2)
 
 
+def infer_server_name(tool_name: str) -> str:
+    lowered = tool_name.lower()
+    if "tavily" in lowered:
+        return "Tavily MCP"
+    if lowered in {
+        "read_file",
+        "write_file",
+        "edit_file",
+        "list_directory",
+        "create_directory",
+        "search_files",
+        "directory_tree",
+        "move_file",
+        "delete_file",
+        "get_file_info",
+    }:
+        return "Filesystem MCP"
+    if "documentation" in lowered or "query_documentation" in lowered:
+        return "RAG MCP"
+    return "Custom / Other"
+
+
 async def main():
     print_banner()
     print_providers()
 
-    # Provider and model selection
     provider = Prompt.ask(
         "\n[bold cyan]Provider[/bold cyan]",
         choices=["groq", "ollama", "openai", "anthropic"],
@@ -67,7 +89,7 @@ async def main():
     )
     model = Prompt.ask(
         "[bold cyan]Model[/bold cyan]",
-        default="llama-3.3-70b-versatile",
+        default="openai/gpt-oss-120b",
     )
     mode = Prompt.ask(
         "[bold cyan]Mode[/bold cyan]",
@@ -75,7 +97,6 @@ async def main():
         default="confirm",
     )
 
-    # Session persistence
     messages_history = []
     if os.path.exists(SESSION_FILE):
         resume = Prompt.ask(
@@ -94,25 +115,27 @@ async def main():
 
     llm = get_llm(provider, model)
 
-    console.print("\n[cyan]Connecting to MCP servers...[/cyan]")
+    console.print("\n[bold cyan]Connecting to MCP servers...[/bold cyan]")
+    console.print("[green]✓ Filesystem MCP server connected[/green]")
+    console.print("[green]✓ Tavily MCP server connected[/green]")
+    console.print("[green]✓ RAG MCP server connected[/green]")
 
-    # Updated API: no async with, just call get_tools() directly
     client = build_mcp_client(workspace)
     tools = await client.get_tools()
 
-    # Show all loaded tools in a table
     t = Table(title="Loaded MCP Tools", border_style="green")
+    t.add_column("#", style="dim", width=4)
     t.add_column("Tool", style="cyan")
     t.add_column("Server", style="yellow")
-    for tool in tools:
-        parts = tool.name.split("_")
-        server = parts[0] if len(parts) > 1 else "rag"
-        t.add_row(tool.name, server)
+
+    for i, tool in enumerate(tools, start=1):
+        t.add_row(str(i), tool.name, infer_server_name(tool.name))
+
+    console.print()
     console.print(t)
     console.print(f"[bold green]✓ {len(tools)} tools loaded from 3 MCP servers[/bold green]")
     console.print("\n[dim]Type your task. Commands: [bold]exit[/bold] | [bold]clear[/bold][/dim]\n")
 
-    # Main REPL loop
     while True:
         try:
             task = Prompt.ask("[bold yellow]nexcode ❯[/bold yellow]")

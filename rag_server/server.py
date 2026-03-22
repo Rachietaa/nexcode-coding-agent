@@ -29,6 +29,7 @@ def query_documentation(query: str) -> str:
 
     try:
         from rag_server.retriever import hyde_retrieve
+
         chunks = hyde_retrieve(query)
         if not chunks:
             return "No relevant documentation found."
