@@ -253,19 +253,19 @@ You:
 | **6** | RAG ingestion pipeline + ChromaDB | Build the DB before the server |
 | **7** | Custom RAG MCP server + HyDE | Third MCP server |
 | **8** | CLI REPL — Rich, streaming, confirmation mode | Polish the interface |
-| **9** | Testing, cleanup, comments, final README | Before submission |
-
 ---
 
 ## Diagrams
-
-> All diagrams are in the [`/docs`](./docs) folder.
 
 | Diagram | File | Description |
 |---------|------|-------------|
 | **State Diagram** | `docs/state_diagram.png` | Full session lifecycle — Idle → Input → LLM → Tool loop → Complete |
 | **Sequence Diagram 1** | `docs/sequence_diagram_1.png` | Documentation query — RAG server invoked end-to-end |
 | **Sequence Diagram 2** | `docs/sequence_diagram_2.png` | File read + web search + file edit with confirmation |
+
+
+
+
 
 ---
 
