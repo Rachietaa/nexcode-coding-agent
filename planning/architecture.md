@@ -253,10 +253,6 @@ You:
 | **Sequence Diagram 1** | `planning/sequence_diagram_1.png` | Documentation query — RAG server invoked end-to-end |
 | **Sequence Diagram 2** | `planning/sequence_diagram_2.png` | File read + web search + file edit with confirmation |
 
-
-
-
-
 ---
 
 ## Dependencies
