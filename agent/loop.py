@@ -61,7 +61,6 @@ async def run_agent(task: str, llm, tools, auto_execute: bool = False, messages_
         "list_directory",
         "create_directory",
         "search_files",
-        "directory_tree",
         "tavily-search",
         "tavily-extract",
         "query_documentation",
