@@ -56,28 +56,43 @@ Example file structure:
 ```
 nexcode-coding-agent/
 │
-├── README.md
-├── PLANNING.md
-├── requirements.txt
+├── main.py                        ← CLI REPL entry point 
+├── README.md                      ← setup and usage instructions
+├── PLANNING.md                    
+├── requirements.txt               ← all Python dependencies
+├── .env                           ← API keys 
+├── .gitignore
 │
-├── docs/
-│   ├── state_diagram.png
-│   ├── sequence_diagram_1.png
-│   └── sequence_diagram_2.png
+├── planning/
+│   ├── architecture.md            ← architecture overview and design decisions
+│   ├── state_diagram.png          ← UML state machine diagram
+│   ├── sequence_diagram_1.png     ← docs query scenario (RAG server)
+│   └── sequence_diagram_2.png     ← file edit scenario (filesystem + Tavily)
 │
-├── rag_server/
-│   ├── server.py          ← FastMCP server + HyDE retrieval
-│   ├── ingest.py          ← one-time ingestion pipeline
-│   └── docs/              ← library docs to embed (markdown files)
+├── config/
+│   ├── __init__.py
+│   └── settings.py                ← environment variables, provider config
 │
 ├── agent/
-│   ├── loop.py            ← LangGraph ReAct agentic loop
-│   └── providers.py       ← Groq / Anthropic / OpenAI / Ollama abstraction
+│   ├── __init__.py
+│   ├── loop.py                    ← LangGraph ReAct agentic loop
+│   └── providers.py               ← Groq / Anthropic / OpenAI / Ollama abstraction
 │
 ├── mcp_client/
-│   └── client.py          ← MultiServerMCPClient, connects all 3 servers
+│   ├── __init__.py
+│   └── client.py                  ← MultiServerMCPClient, connects all 3 servers
 │
-└── main.py                ← CLI REPL entry point (Rich interface)
+├── tools/
+│   ├── __init__.py
+│   └── executor.py                ← tool execution handler, confirmation logic
+│
+├── rag_server/
+│   ├── __init__.py
+│   ├── ingest.py                  ← one-time ingestion pipeline (chunk, embed, store)
+│   ├── retriever.py               ← HyDE retrieval logic
+│   └── server.py                  ← FastMCP server, exposes rag_query tool
+│
+└── docs_source/                   ← library documentation files to embed (.md / .txt)
 
 ```
 
