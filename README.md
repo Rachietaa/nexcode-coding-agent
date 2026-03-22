@@ -53,13 +53,13 @@ Before running the project, install:
 - Node.js and npm
 - Git
 - Conda or venv
-- OpenAI API key
+- Groq API key
 - Tavily API key
 
 Optional:
 
 - Ollama for local models
-- Groq API key
+- OpenAI API key
 - Anthropic API key
 
 ## Setup
