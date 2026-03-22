@@ -51,8 +51,9 @@ MCP Client
  ├──► Filesystem MCP Server   (read/write/list files)
  ├──► Tavily MCP Server       (web search)
  └──► Custom RAG MCP Server   (vector DB query over library docs)
-
+```
 Example file structure:
+```
 nexcode-coding-agent/
 │
 ├── README.md
