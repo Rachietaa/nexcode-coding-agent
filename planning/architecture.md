@@ -51,6 +51,33 @@ MCP Client
  ├──► Filesystem MCP Server   (read/write/list files)
  ├──► Tavily MCP Server       (web search)
  └──► Custom RAG MCP Server   (vector DB query over library docs)
+
+Example file structure:
+nexcode-coding-agent/
+│
+├── README.md
+├── PLANNING.md
+├── requirements.txt
+│
+├── docs/
+│   ├── state_diagram.png
+│   ├── sequence_diagram_1.png
+│   └── sequence_diagram_2.png
+│
+├── rag_server/
+│   ├── server.py          ← FastMCP server + HyDE retrieval
+│   ├── ingest.py          ← one-time ingestion pipeline
+│   └── docs/              ← library docs to embed (markdown files)
+│
+├── agent/
+│   ├── loop.py            ← LangGraph ReAct agentic loop
+│   └── providers.py       ← Groq / Anthropic / OpenAI / Ollama abstraction
+│
+├── mcp_client/
+│   └── client.py          ← MultiServerMCPClient, connects all 3 servers
+│
+└── main.py                ← CLI REPL entry point (Rich interface)
+
 ```
 
 ---
