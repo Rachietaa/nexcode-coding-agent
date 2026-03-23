@@ -6,6 +6,8 @@ Main CLI entry point.
 import asyncio
 import json
 import os
+import sys
+import subprocess
 
 from rich.console import Console
 from rich.panel import Panel
@@ -42,7 +44,7 @@ def print_providers():
     t.add_column("Example Model", style="white")
     t.add_column("Notes", style="dim")
     t.add_row("groq", "llama-3.3-70b-versatile", "FREE API key — recommended")
-    t.add_row("ollama", "llama3.2, codellama", "Fully local, no key needed")
+    t.add_row("ollama", "llama3.1, codellama", "Fully local, no key needed")
     t.add_row("openai", "gpt-4o, gpt-4o-mini", "Paid API key required")
     t.add_row("anthropic", "claude-3-5-sonnet-20241022", "Paid API key required")
     console.print(t)
@@ -118,9 +120,18 @@ async def main():
         choices=["groq", "ollama", "openai", "anthropic"],
         default="groq",
     )
+
+    default_model = "llama-3.3-70b-versatile"
+    if provider == "ollama":
+        default_model = "llama3.1"
+    elif provider == "openai":
+        default_model = "gpt-4o"
+    elif provider == "anthropic":
+        default_model = "claude-3-5-sonnet-20241022"
+
     model = Prompt.ask(
         "[bold cyan]Model[/bold cyan]",
-        default="llama-3.3-70b-versatile",
+        default=default_model,
     )
     mode = Prompt.ask(
         "[bold cyan]Mode[/bold cyan]",
@@ -147,11 +158,20 @@ async def main():
     llm = get_llm(provider, model)
 
     console.print("\n[bold cyan]Connecting to MCP servers...[/bold cyan]")
+    
+    rag_process = subprocess.Popen(
+        [sys.executable, "-m", "rag_server.server"],
+        env={**os.environ, "NEXCODE_PROVIDER": provider, "NEXCODE_MODEL": model},
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    await asyncio.sleep(2.5)  # Give FastMCP time to boot the SSE server on port 8001
+    
     console.print("[green]✓ Filesystem MCP server connected[/green]")
     console.print("[green]✓ Tavily MCP server connected[/green]")
     console.print("[green]✓ RAG MCP server connected[/green]")
 
-    client = build_mcp_client(workspace)
+    client = build_mcp_client(workspace, provider, model)
     tools = await client.get_tools()
 
     t = Table(title="Loaded MCP Tools", border_style="green")
@@ -222,6 +242,7 @@ async def main():
             console.print(f"[bold red]Error:[/bold red] {e}")
 
     save_session(messages_history)
+    rag_process.terminate()
 
 
 if __name__ == "__main__":

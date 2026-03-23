@@ -171,8 +171,12 @@ async def run_agent(task: str, llm, tools, auto_execute: bool = False, messages_
     """
     messages = list(messages_history) if messages_history else []
 
+    import os
+    workspace_dir = os.getcwd()
+    dynamic_system_prompt = SYSTEM_PROMPT + f"\n\nIMPORTANT: Your current working directory is: {workspace_dir}. Always use absolute paths starting with this directory when creating or modifying files!"
+
     if not messages or (isinstance(messages[0], dict) and messages[0].get("role") != "system"):
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
+        messages = [{"role": "system", "content": dynamic_system_prompt}] + messages
 
     messages.append({"role": "user", "content": task})
 

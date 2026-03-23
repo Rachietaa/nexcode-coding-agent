@@ -6,3 +6,4 @@ chroma_db/
 .venv/
 venv/
 .nexcode_session.json
+.DS_Store
