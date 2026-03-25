@@ -1,6 +1,6 @@
 """
 NexCode — AI Coding Assistant
-Main CLI entry point.
+Main CLI entry point
 """
 
 import asyncio
