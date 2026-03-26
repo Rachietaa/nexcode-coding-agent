@@ -4,7 +4,6 @@ Main CLI entry point
 """
 
 import asyncio
-import json
 import os
 import sys
 import subprocess
@@ -17,9 +16,17 @@ from rich.table import Table
 from agent.providers import get_llm
 from agent.loop import run_agent
 from mcp_client.client import build_mcp_client
+from session_store import (
+    SessionLoadError,
+    SessionState,
+    delete_session_file,
+    describe_session,
+    get_session_path,
+    load_session,
+    save_session_state,
+)
 
 console = Console()
-SESSION_FILE = ".nexcode_session.json"
 AGENT_TIMEOUT_SECONDS = 90
 
 
@@ -48,18 +55,6 @@ def print_providers():
     t.add_row("openai", "gpt-4o, gpt-4o-mini", "Paid API key required")
     t.add_row("anthropic", "claude-3-5-sonnet-20241022", "Paid API key required")
     console.print(t)
-
-
-def load_session() -> list:
-    if os.path.exists(SESSION_FILE):
-        with open(SESSION_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    return []
-
-
-def save_session(messages: list):
-    with open(SESSION_FILE, "w", encoding="utf-8") as f:
-        json.dump(messages, f, indent=2)
 
 
 def infer_server_name(tool_name: str) -> str:
@@ -115,45 +110,78 @@ async def main():
     print_banner()
     print_providers()
 
+    session_path = get_session_path()
+    prior: SessionState | None = None
+    messages_history: list = []
+
+    if os.path.exists(session_path):
+        try:
+            preview = load_session(session_path)
+        except SessionLoadError as exc:
+            console.print(f"[yellow]Could not load session file ({session_path}): {exc}[/yellow]")
+            preview = SessionState()
+        else:
+            if preview.messages or preview.saved_at:
+                resume = Prompt.ask(
+                    "\n[bold cyan]Resume previous session?[/bold cyan] "
+                    f"[dim]({describe_session(preview)})[/dim]",
+                    choices=["y", "n"],
+                    default="n",
+                )
+                if resume == "y":
+                    prior = preview
+                    messages_history = list(preview.messages)
+                    console.print(
+                        f"[green]✓ Resumed {len(messages_history)} messages[/green]"
+                    )
+
+    default_provider = prior.provider if prior and prior.provider else "groq"
     provider = Prompt.ask(
         "\n[bold cyan]Provider[/bold cyan]",
         choices=["groq", "ollama", "openai", "anthropic"],
-        default="groq",
+        default=default_provider,
     )
 
-    default_model = "llama-3.3-70b-versatile"
-    if provider == "ollama":
+    if prior and prior.model:
+        default_model = prior.model
+    elif provider == "ollama":
         default_model = "llama3.1"
     elif provider == "openai":
         default_model = "gpt-4o"
     elif provider == "anthropic":
         default_model = "claude-3-5-sonnet-20241022"
+    else:
+        default_model = "llama-3.3-70b-versatile"
 
     model = Prompt.ask(
         "[bold cyan]Model[/bold cyan]",
         default=default_model,
     )
+    default_mode = prior.mode if prior and prior.mode else "confirm"
     mode = Prompt.ask(
         "[bold cyan]Mode[/bold cyan]",
         choices=["auto", "confirm"],
-        default="confirm",
+        default=default_mode,
     )
 
-    messages_history = []
-    if os.path.exists(SESSION_FILE):
-        resume = Prompt.ask(
-            "[bold cyan]Resume previous session?[/bold cyan]",
-            choices=["y", "n"],
-            default="n",
-        )
-        if resume == "y":
-            messages_history = load_session()
-            console.print(f"[green]✓ Resumed {len(messages_history)} messages[/green]")
-
+    default_workspace = prior.workspace if prior and prior.workspace else os.getcwd()
     workspace = Prompt.ask(
         "[bold cyan]Workspace path[/bold cyan]",
-        default=os.getcwd(),
+        default=default_workspace,
     )
+    workspace = os.path.abspath(os.path.expanduser(workspace))
+
+    def persist():
+        save_session_state(
+            SessionState(
+                messages=messages_history,
+                provider=provider,
+                model=model,
+                mode=mode,
+                workspace=workspace,
+            ),
+            session_path,
+        )
 
     llm = get_llm(provider, model)
 
@@ -196,14 +224,12 @@ async def main():
         normalized = task.strip().lower()
 
         if normalized in ["exit", "quit", "q"]:
-            save_session(messages_history)
             console.print("[bold cyan]Session saved. Goodbye! 👋[/bold cyan]")
             break
 
         if normalized == "clear":
             messages_history = []
-            if os.path.exists(SESSION_FILE):
-                os.remove(SESSION_FILE)
+            delete_session_file(session_path)
             console.print("[yellow]Session cleared.[/yellow]")
             continue
 
@@ -227,10 +253,11 @@ async def main():
                     tools=selected_tools,
                     auto_execute=(mode == "auto"),
                     messages_history=messages_history,
+                    workspace_path=workspace,
                 ),
                 timeout=AGENT_TIMEOUT_SECONDS,
             )
-            save_session(messages_history)
+            persist()
 
         except asyncio.TimeoutError:
             console.print(
@@ -241,7 +268,7 @@ async def main():
         except Exception as e:
             console.print(f"[bold red]Error:[/bold red] {e}")
 
-    save_session(messages_history)
+    persist()
     rag_process.terminate()
 
 

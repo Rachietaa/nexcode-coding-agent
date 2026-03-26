@@ -165,18 +165,40 @@ def select_tools(task: str, tools: list) -> list:
     return selected if selected else tools
 
 
-async def run_agent(task: str, llm, tools, auto_execute: bool = False, messages_history: list = None):
+def _apply_system_message(messages: list, dynamic_system_prompt: str) -> list:
+    """Ensure a single fresh system prompt (correct workspace) when resuming saved sessions."""
+    messages = [m for m in messages if isinstance(m, dict)]
+    if not messages:
+        return [{"role": "system", "content": dynamic_system_prompt}]
+    if messages[0].get("role") == "system":
+        out = list(messages)
+        out[0] = {"role": "system", "content": dynamic_system_prompt}
+        return out
+    return [{"role": "system", "content": dynamic_system_prompt}] + messages
+
+
+async def run_agent(
+    task: str,
+    llm,
+    tools,
+    auto_execute: bool = False,
+    messages_history: list = None,
+    workspace_path: str | None = None,
+):
     """
     Core agentic loop. Streams LLM responses and displays reasoning and tool calls visibly.
     """
+    import os
+
     messages = list(messages_history) if messages_history else []
 
-    import os
-    workspace_dir = os.getcwd()
-    dynamic_system_prompt = SYSTEM_PROMPT + f"\n\nIMPORTANT: Your current working directory is: {workspace_dir}. Always use absolute paths starting with this directory when creating or modifying files!"
+    workspace_dir = os.path.abspath(workspace_path or os.getcwd())
+    dynamic_system_prompt = SYSTEM_PROMPT + (
+        f"\n\nIMPORTANT: Your current working directory is: {workspace_dir}. "
+        "Always use absolute paths starting with this directory when creating or modifying files!"
+    )
 
-    if not messages or (isinstance(messages[0], dict) and messages[0].get("role") != "system"):
-        messages = [{"role": "system", "content": dynamic_system_prompt}] + messages
+    messages = _apply_system_message(messages, dynamic_system_prompt)
 
     messages.append({"role": "user", "content": task})
 
